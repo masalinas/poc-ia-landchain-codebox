@@ -1,5 +1,5 @@
 # poc-ia-codebox
-PoC landchain using a codebox to execute code
+PoC landchain creating a codebox to execute python code
 
 ## Scripts
 - **main_pythonREPL.py**: geberate a codebox using REPL
