@@ -1,5 +1,5 @@
-import docker
 import re
+import docker
 
 from langchain_core.tools import tool
 from langchain_ollama import ChatOllama
@@ -20,20 +20,35 @@ def extract_code(raw: str) -> str:
 
 @tool
 def docker_code_box(code: str) -> str:
+    # """Executes Python code safely inside an isolated Docker container (CodeBox) 
+    # and returns the stdout/stderr. Use this for computations or data processing."""
     """Executes Python code safely inside an isolated Docker container (CodeBox) 
-    and returns the stdout/stderr. Use this for computations or data processing."""
+    and returns the stdout/stderr. Use this for computations, file reading, or data processing.
     
+    Any files you want to analyze (like Excel/CSV files) are located in the '/data' directory.
+    """    
     clean_code = extract_code(code)
     escaped_code = clean_code.replace("'", "'\\''")
     
+    # Define where your local files are located on your computer
+    host_data_dir = "/home/miguel/git/poc-ia-landchain-codebox/data"
+
     try:
         container_output = docker_client.containers.run(
-            image="python:3.11-slim",
+            #image="python:3.11-slim",
+            image="amancevice/pandas:alpine",            
             command=f"python -c '{escaped_code}'",
             remove=True,
             network_disabled=True,
             mem_limit="128m",
             stderr=True,
+            # Mount your local folder to '/data' inside the container as Read-Only
+            volumes={
+                host_data_dir: {
+                    'bind': '/data',
+                    'mode': 'ro' # Read-Only for safety
+                }
+            }            
         )
         return f"Execution Success:\n{container_output.decode('utf-8')}"
     
@@ -55,12 +70,12 @@ tools = [docker_code_box]
 agent_executor = create_agent(
     llm,
     tools,
-    system_prompt="You are a helpful assistant. Use the docker_code_box tool for any computation.",
+    system_prompt="You are a helpful assistant. Use the docker_code_box tool for any computation."
 )
 
-# Test it out!
-instruction = "What is the result of 2**10 multiplied by 5? Use the docker code box."
-
+# 4. Test it out!
+#instruction = "What is the result of 2**10 multiplied by 5? Use the docker code box"
+instruction = "Read the Excel file located at /data/metrics_pi_m.xlsx using pandas. Calculate the mean of all the numeric columns and print a brief summary of the results."
 print(f"Usuario: {instruction}\n")
 
 # The agent enters the loop: think -> call tool -> read result -> respond

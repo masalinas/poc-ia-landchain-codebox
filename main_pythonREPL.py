@@ -1,6 +1,6 @@
-from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_ollama import ChatOllama
+from langchain.agents import create_agent
 from langchain_experimental.utilities import PythonREPL
 
 # 1. Creamos el "CodeBox" básico (REPL de Python)
@@ -29,11 +29,13 @@ llm = ChatOllama(
 tools = [code_box_interpreter]
 
 # 4. Creamos el agente reactivo de LangGraph
-agent_executor = create_agent(llm, tools)
+agent_executor = create_agent(
+    llm,
+    tools
+)
 
 # 5. Ejecución de prueba
 instruccion = "¿Cuál es el número primo número 150? Calcúlalo escribiendo un script en Python."
-
 print(f"Usuario: {instruccion}\n")
 
 # El agente entra en el bucle: piensa -> llama a la herramienta -> lee resultado -> responde
