@@ -31,25 +31,26 @@ def docker_code_box(code: str) -> str:
     escaped_code = clean_code.replace("'", "'\\''")
     
     # Define where your local files are located on your computer
-    host_data_dir = "/home/miguel/git/poc-ia-landchain-codebox/data"
+    host_data_dir = "/Users/miguel/git/poc-ia-landchain-codebox/data"
 
     try:
         container_output = docker_client.containers.run(
-            #image="python:3.11-slim",
-            image="amancevice/pandas:alpine",            
-            command=f"python -c '{escaped_code}'",
+            image="python:3.11-slim",            
+            command=[
+                "sh", "-c", 
+                f"pip install --no-cache-dir --quiet pandas openpyxl && python -c '{escaped_code}'"
+            ],
+            mem_limit="512m",            
             remove=True,
-            network_disabled=True,
-            mem_limit="128m",
             stderr=True,
-            # Mount your local folder to '/data' inside the container as Read-Only
             volumes={
                 host_data_dir: {
                     'bind': '/data',
                     'mode': 'ro' # Read-Only for safety
-                }
+                } 
             }            
         )
+
         return f"Execution Success:\n{container_output.decode('utf-8')}"
     
     except docker.errors.ContainerError as e:
@@ -61,7 +62,7 @@ def docker_code_box(code: str) -> str:
         return f"System Error: Could not execute code. Details: {str(e)}"
 
 # 1. Local Model via Ollama
-llm = ChatOllama(model="hf.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF:latest", temperature=0)
+llm = ChatOllama(model="hf.co/unsloth/Llama-3.2-3B-Instruct-GGUF:latest", temperature=0)
 
 # 2. Tools
 tools = [docker_code_box]
